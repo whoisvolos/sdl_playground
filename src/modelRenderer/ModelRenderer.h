@@ -22,14 +22,24 @@ private:
     std::vector<shape_t> shapes;
     std::vector<material_t> materials;
 
+    /*
     OpenGLShaderProgram* program;
     OpenGLVAO* vao;
     OpenGLBuffer* vertices;
     OpenGLBuffer* indices;
+    */
 
     glm::mat4 worldMatrix;
     glm::mat4 cameraMatrix;
     glm::mat4 projectionMatrix;
+
+    GLchar* vertexSource;
+    GLchar*fragmentSource;
+    GLuint vertexShader;
+    GLuint fragmentShader;
+    GLuint shaderProgram;
+    GLuint vao;
+    GLuint vbo;
 
 public:
     virtual void onEvent(SDL_Event& event) override;

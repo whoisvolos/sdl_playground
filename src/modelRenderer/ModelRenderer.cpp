@@ -6,8 +6,8 @@ using namespace utils;
 
 ModelRenderer::ModelRenderer(const char* name, const char*modelFile)
         : AppContainer(name),
-          modeFile(modelFile),
-          program(nullptr) {}
+          modeFile(modelFile)/*,
+          program(nullptr)*/ {}
 
 ModelRenderer::~ModelRenderer() {
     if (glContext) {
@@ -62,14 +62,7 @@ int ModelRenderer::afterInit() {
         return 1;
     }
 
-    vao = new OpenGLVAO();
-    vao->bind();
-    vertices = OpenGLBuffer::arrayBuffer();
-    indices = OpenGLBuffer::indexBuffer();
-    mesh_t& mesh = shapes[0].mesh;
-    vertices->setData(sizeof(GLfloat) * mesh.positions.size(), mesh.positions.data(), GL_STATIC_DRAW);
-    indices->setData(sizeof(unsigned int) * mesh.indices.size(), mesh.indices.data(), GL_STATIC_DRAW);
-
+    /*
     program = new OpenGLShaderProgram;
     if (program->addShaderFromSourceFile(OpenGLShaderProgram::VertexType, "/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert") != 0 ||
         program->addShaderFromSourceFile(OpenGLShaderProgram::FragmentType, "/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/simple.frag") != 0) {
@@ -81,49 +74,118 @@ int ModelRenderer::afterInit() {
         return 1;
     }
 
+    vao = new OpenGLVAO();
+    vao->bind();
+    vertices = OpenGLBuffer::arrayBuffer();
+    //indices = OpenGLBuffer::indexBuffer();
+    mesh_t& mesh = shapes[0].mesh;
+    vertices->setData(sizeof(GLfloat), mesh.positions.size(), mesh.positions.data(), GL_STATIC_DRAW);
+    //indices->setData(sizeof(unsigned int), mesh.indices.size(), mesh.indices.data(), GL_STATIC_DRAW);
+
+    printf("%lu\n", indices->count());
+
     vertices->setPointerForProgram(program, "vertex", 3, GL_FLOAT);
+    vertices->release();
+
     cameraMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -2));
     worldMatrix = glm::mat4(1.0);
-    projectionMatrix = glm::perspective(glm::radians(90.0f), (float)width/height, 0.01f, 100.0f);
+    projectionMatrix = glm::perspective(45.0f, (float)width/height, 0.01f, 100.0f);
 
-    glClearColor(1.0, 1.0, 1.0, 1.0);
-    glClearDepth(1.0f);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-
-    return 0;
-}
-
-void ModelRenderer::logProgramParams() const {
-    auto unifs = program->getAllUniforms();
-    std::cout << "Uniforms:" << std::endl;
-    for (auto u : unifs) {
-        printf("%s, type: %s, size: %i\n", u.name.c_str(), program->getTypeName(u.type), u.size);
-    }
-    std::cout << "Attributes:" << std::endl;
-    auto attribs = program->getAllAttributes();
-    for (auto a : attribs) {
-        printf("%s, type: %s, size: %i, index: %i\n", a.name.c_str(), program->getTypeName(a.type), a.size, a.index);
-    }
-}
-
-void ModelRenderer::onRender() {
-    /*
-    vao->bind();
     program->bind();
 
     program->setUniform("projMatrix", projectionMatrix);
     program->setUniform("worldMatrix", worldMatrix);
     program->setUniform("cameraMatrix", cameraMatrix);
 
-    glClearColor(1.0, 1.0, 1.0, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    SDL_GL_SwapWindow(window);
-
     program->release();
+
+    glClearColor(0.5, 0.5, 0.5, 1.0);
     */
 
+
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    mesh_t& mesh = shapes[0].mesh;
+    glBufferData(GL_ARRAY_BUFFER, mesh.positions.size() * sizeof(GLfloat), mesh.positions.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+    glEnableVertexAttribArray(0);
+
+    size_t len;
+    vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
+    fragmentSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/simple.frag", len);
+    if (!vertexSource) {
+        std::cerr << "Can not load vshader" << std::endl;
+        return 1;
+    }
+    if (!fragmentSource) {
+        std::cerr << "Can not load fshader" << std::endl;
+        return 1;
+    }
+
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    glShaderSource(vertexShader, 1, (const GLchar**)vertexSource, 0);
+    glShaderSource(fragmentShader, 1, (const GLchar**)vertexSource, 0);
+
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
+
+    GLint status;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+    if (!status) {
+        std::cerr << "Can not compile vshader" << std::endl;
+        return 1;
+    }
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
+    if (!status) {
+        std::cerr << "Can not compile fshader" << std::endl;
+        return 1;
+    }
+
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glBindAttribLocation(shaderProgram, 0, "vertex");
+    glLinkProgram(shaderProgram);
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
+    if (!status) {
+        std::cerr << "Can not link shaders" << std::endl;
+        return 1;
+    }
+
+
+
+    return 0;
+}
+
+void ModelRenderer::logProgramParams() const {
+    /*
+    auto unifs = program->getAllUniforms();
+    std::cout << "Uniforms:" << std::endl;
+    for (auto u : unifs) {
+        printf("%s, type: %s, totalSize: %i\n", u.name.c_str(), program->getTypeName(u.type), u.size);
+    }
+    std::cout << "Attributes:" << std::endl;
+    auto attribs = program->getAllAttributes();
+    for (auto a : attribs) {
+        printf("%s, type: %s, totalSize: %i, index: %i\n", a.name.c_str(), program->getTypeName(a.type), a.size, a.index);
+    }
+    */
+}
+
+void ModelRenderer::onRender() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    glUseProgram(shaderProgram);
+    glDrawArrays(GL_TRIANGLES, 0, shapes[0].mesh.positions.size());
+    glUseProgram(0);
+
     SDL_GL_SwapWindow(window);
 }
 

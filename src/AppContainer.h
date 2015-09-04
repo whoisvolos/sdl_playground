@@ -25,7 +25,7 @@ public:
     AppContainer(const char* name);
     virtual ~AppContainer();
 
-    int init(int width, int height);
+    int init(int width, int height, bool onlyOpenGl = false);
     int run();
     void stop();
     float getFPS();

@@ -379,7 +379,7 @@ inline void OpenGLShaderProgram::setUniform(GLint loc, glm::mat4& value, bool tr
     glUniformMatrix4fv(loc, 3, static_cast<GLboolean>(transpose), glm::value_ptr(value));
 }
 
-static char* readFile(const char *filePath, size_t& length) {
+char* OpenGLShaderProgram::readFile(const char *filePath, size_t& length) {
     FILE *fptr;
     fptr = fopen(filePath, "rb");
     if (!fptr) {

@@ -84,4 +84,6 @@ public:
     int link();
     void bind();
     void release();
+
+    static char* readFile(const char *filePath, size_t& length);
 };

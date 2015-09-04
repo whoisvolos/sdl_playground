@@ -4,7 +4,7 @@ using namespace utils;
 
 AppContainer::AppContainer(const char* name): running(false), windowName(name) { }
 
-int AppContainer::init(int width, int height) {
+int AppContainer::init(int width, int height, bool onlyOpenGL) {
     this->width = width;
     this->height = height;
 
@@ -26,13 +26,14 @@ int AppContainer::init(int width, int height) {
         return 1;
     }
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == nullptr){
-        logSDLError(std::cerr, "SDL_CreateRenderer");
-        return 1;
+    if (!onlyOpenGL) {
+        renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        if (renderer == nullptr) {
+            logSDLError(std::cerr, "SDL_CreateRenderer");
+            return 1;
+        }
+        SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888, &bpp, &rMask, &gMask, &bMask, &aMask);
     }
-
-    SDL_PixelFormatEnumToMasks(SDL_PIXELFORMAT_ARGB8888, &bpp, &rMask, &gMask, &bMask, &aMask);
 
     prevUpdate = 0;
     ticks = 0;
@@ -63,9 +64,11 @@ void AppContainer::onEvent(SDL_Event& event) {
 }
 
 void AppContainer::onRender() {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
-    SDL_RenderPresent(renderer);
+    if (renderer) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        SDL_RenderPresent(renderer);
+    }
 }
 
 void AppContainer::stop() {

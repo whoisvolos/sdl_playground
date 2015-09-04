@@ -1,6 +1,6 @@
 #include "OpenGLBuffer.h"
 
-OpenGLBuffer::OpenGLBuffer(GLenum target): target(target), bound(false), usage(GL_NONE), size(0) {
+OpenGLBuffer::OpenGLBuffer(GLenum target): target(target), bound(false), usage(GL_NONE), elemSize(0), elemCount(0) {
     glGenBuffers(1, &vbo);
 }
 
@@ -15,22 +15,24 @@ void OpenGLBuffer::bind() {
     }
 }
 
-void OpenGLBuffer::unbind() {
+void OpenGLBuffer::release() {
     if (bound) {
         glBindBuffer(target, 0);
         bound = false;
     }
 }
 
-void OpenGLBuffer::setData(size_t size, const void *data, GLenum usage) {
+void OpenGLBuffer::setData(size_t elemSize, size_t count, const void *data, GLenum usage) {
     bind();
     this->usage = usage;
-    this->size = size;
-    glBufferData(target, size, data, usage);
+    this->elemCount = count;
+    this->elemSize = elemSize;
+    glBufferData(target, elemSize * count, data, usage);
 }
 
 void OpenGLBuffer::clear() {
-    setData(size, nullptr, usage);
+    setData(0, 0, nullptr, usage);
+    release();
 }
 
 OpenGLBuffer* OpenGLBuffer::arrayBuffer() {
@@ -45,5 +47,10 @@ void OpenGLBuffer::setPointerForProgram(const OpenGLShaderProgram* program, cons
     bind();
     GLuint vPos = program->getAttribLocation(attrName);
     glEnableVertexAttribArray(vPos);
-    glVertexAttribPointer(vPos, size, type, static_cast<GLboolean>(normalized), size * sizeof(GLfloat), 0);
+    //glVertexAttribPointer(vPos, size, type, static_cast<GLboolean>(normalized), size * elemSize, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 12, 0);
+}
+
+size_t OpenGLBuffer::count() {
+    return elemCount;
 }
