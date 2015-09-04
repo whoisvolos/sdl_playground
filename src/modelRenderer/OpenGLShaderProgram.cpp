@@ -350,7 +350,7 @@ int OpenGLShaderProgram::setUniform(const char* name, glm::mat2& value, bool tra
 }
 
 inline void OpenGLShaderProgram::setUniform(GLint loc, glm::mat2& value, bool transpose) {
-    glUniformMatrix2fv(loc, 2, static_cast<GLboolean>(transpose), glm::value_ptr(value));
+    glUniformMatrix2fv(loc, 1, static_cast<GLboolean>(transpose), glm::value_ptr(value));
 }
 
 int OpenGLShaderProgram::setUniform(const char* name, glm::mat3& value, bool transpose) {
@@ -363,7 +363,7 @@ int OpenGLShaderProgram::setUniform(const char* name, glm::mat3& value, bool tra
 }
 
 inline void OpenGLShaderProgram::setUniform(GLint loc, glm::mat3& value, bool transpose) {
-    glUniformMatrix3fv(loc, 3, static_cast<GLboolean>(transpose), glm::value_ptr(value));
+    glUniformMatrix3fv(loc, 1, static_cast<GLboolean>(transpose), glm::value_ptr(value));
 }
 
 int OpenGLShaderProgram::setUniform(const char* name, glm::mat4& value, bool transpose) {
@@ -376,7 +376,7 @@ int OpenGLShaderProgram::setUniform(const char* name, glm::mat4& value, bool tra
 }
 
 inline void OpenGLShaderProgram::setUniform(GLint loc, glm::mat4& value, bool transpose) {
-    glUniformMatrix4fv(loc, 3, static_cast<GLboolean>(transpose), glm::value_ptr(value));
+    glUniformMatrix4fv(loc, 1, static_cast<GLboolean>(transpose), glm::value_ptr(value));
 }
 
 char* OpenGLShaderProgram::readFile(const char *filePath, size_t& length) {

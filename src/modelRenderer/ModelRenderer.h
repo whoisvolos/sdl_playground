@@ -34,12 +34,12 @@ private:
     glm::mat4 projectionMatrix;
 
     GLchar* vertexSource;
-    GLchar*fragmentSource;
+    GLchar* fragmentSource;
     GLuint vertexShader;
     GLuint fragmentShader;
     GLuint shaderProgram;
     GLuint vao;
-    GLuint vbo;
+    GLuint vbo[2];
 
 public:
     virtual void onEvent(SDL_Event& event) override;

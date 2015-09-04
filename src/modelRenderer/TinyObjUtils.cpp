@@ -1,7 +1,7 @@
 #include <tiny_obj_loader.h>
 #include "TinyObjUtils.h"
 
-void TinyObjUtils::normalize(std::vector<shape_t> &shapes) {
+void TinyObjUtils::normalize(std::vector<shape_t>& shapes) {
     GLfloat min = std::numeric_limits<GLfloat>::min();
     GLfloat max = std::numeric_limits<GLfloat>::max();
     GLfloat minBox[3] = { max, max, max }, maxBox[3] = { min, min, min };
@@ -25,8 +25,8 @@ void TinyObjUtils::normalize(std::vector<shape_t> &shapes) {
 
     for (auto shape : shapes) {
         auto positions = shape.mesh.positions;
-        for (float& position : positions) {
-            position /= cubeLen;
+        for (unsigned long i = 0, l = positions.size(); i < l; ++i) {
+            *(positions.data() + i) = 0;
         }
     }
 }

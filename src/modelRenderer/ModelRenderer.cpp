@@ -36,8 +36,7 @@ int ModelRenderer::afterInit() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-    //SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 
     glContext = SDL_GL_CreateContext(window);
     if (!glContext) {
@@ -102,20 +101,21 @@ int ModelRenderer::afterInit() {
     glClearColor(0.5, 0.5, 0.5, 1.0);
     */
 
-
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glGenBuffers(2, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 
     mesh_t& mesh = shapes[0].mesh;
     glBufferData(GL_ARRAY_BUFFER, mesh.positions.size() * sizeof(GLfloat), mesh.positions.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(GL_UNSIGNED_INT), mesh.indices.data(), GL_STATIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
 
     size_t len;
-    vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
-    fragmentSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/simple.frag", len);
+    vertexSource = OpenGLShaderProgram::readFile("/Users/whoisvolos/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
+    fragmentSource = OpenGLShaderProgram::readFile("/Users/whoisvolos/repos/cpp_projects/sdl_playground/shaders/simple.frag", len);
     if (!vertexSource) {
         std::cerr << "Can not load vshader" << std::endl;
         return 1;
@@ -128,8 +128,8 @@ int ModelRenderer::afterInit() {
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-    glShaderSource(vertexShader, 1, (const GLchar**)vertexSource, 0);
-    glShaderSource(fragmentShader, 1, (const GLchar**)vertexSource, 0);
+    glShaderSource(vertexShader, 1, (const GLchar**)&vertexSource, 0);
+    glShaderSource(fragmentShader, 1, (const GLchar**)&fragmentSource, 0);
 
     glCompileShader(vertexShader);
     glCompileShader(fragmentShader);
@@ -157,7 +157,19 @@ int ModelRenderer::afterInit() {
         return 1;
     }
 
+    glClearColor(0.5, 0.5, 0.5, 1.0);
 
+    glUseProgram(shaderProgram);
+    worldMatrix = glm::mat4(1.0);
+    cameraMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -2));
+    projectionMatrix = glm::perspective(glm::radians(75.0f), 1.0f * width / height, 0.01f, 100.0f);
+    auto wmLoc = glGetUniformLocation(shaderProgram, "worldMatrix");
+    auto cmLoc = glGetUniformLocation(shaderProgram, "cameraMatrix");
+    auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
+    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(worldMatrix));
+    glUniformMatrix4fv(cmLoc, 1, GL_FALSE, glm::value_ptr(cameraMatrix));
+    glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+    glUseProgram(0);
 
     return 0;
 }
@@ -183,7 +195,7 @@ void ModelRenderer::onRender() {
     glDepthFunc(GL_LEQUAL);
 
     glUseProgram(shaderProgram);
-    glDrawArrays(GL_TRIANGLES, 0, shapes[0].mesh.positions.size());
+    glDrawElements(GL_TRIANGLES, shapes[0].mesh.indices.size(), GL_UNSIGNED_INT, 0);
     glUseProgram(0);
 
     SDL_GL_SwapWindow(window);
