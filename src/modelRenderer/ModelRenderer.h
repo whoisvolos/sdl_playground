@@ -5,6 +5,8 @@
 #include "OpenGLShaderProgram.h"
 #include "OpenGLVAO.h"
 #include "OpenGLBuffer.h"
+#include "TinyObjUtils.h"
+#include "FuncModel.h"
 #include <SDL.h>
 #include <GL/glew.h>
 #include <OpenGL/gl.h>

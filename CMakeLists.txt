@@ -42,7 +42,7 @@ set(SOURCE_FILES
         src/SpringModel.h
         src/ColorLinesModel.h
         src/modelRenderer/ModelRenderer.cpp
-        src/modelRenderer/ModelRenderer.h src/modelRenderer/OpenGLShaderProgram.cpp src/modelRenderer/OpenGLShaderProgram.h src/modelRenderer/OpenGLBuffer.cpp src/modelRenderer/OpenGLBuffer.h src/modelRenderer/OpenGLVAO.cpp src/modelRenderer/OpenGLVAO.h src/modelRenderer/TinyObjUtils.cpp src/modelRenderer/TinyObjUtils.h)
+        src/modelRenderer/ModelRenderer.h src/modelRenderer/OpenGLShaderProgram.cpp src/modelRenderer/OpenGLShaderProgram.h src/modelRenderer/OpenGLBuffer.cpp src/modelRenderer/OpenGLBuffer.h src/modelRenderer/OpenGLVAO.cpp src/modelRenderer/OpenGLVAO.h src/modelRenderer/TinyObjUtils.cpp src/modelRenderer/TinyObjUtils.h src/modelRenderer/FuncModel.cpp src/modelRenderer/FuncModel.h)
 
 #Tiny obj loader files
 set(TINY_OBJ_LOADER_INCLUDE_DIR "${EXT_DIR}/tinyloader")

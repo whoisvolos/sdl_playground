@@ -1,6 +1,4 @@
-#include <tiny_obj_loader.h>
 #include "ModelRenderer.h"
-#include "TinyObjUtils.h"
 
 using namespace utils;
 
@@ -15,6 +13,9 @@ ModelRenderer::~ModelRenderer() {
 }
 
 int ModelRenderer::afterInit() {
+    FuncModel fmodel([](float x, float y) -> float { return expf(-x*x - y*y); });
+    fmodel.generateMesh(-1, 1, -1, 1, 1, 1);
+
     std::string err = LoadObj(shapes, materials, modeFile);
     if (!err.empty()) {
         std::cerr << err << std::endl;
@@ -27,8 +28,6 @@ int ModelRenderer::afterInit() {
         std::cout << "Faces: " << shape.mesh.indices.size() / 3 << std::endl;
         std::cout << "Vertices: " << shape.mesh.positions.size() / 3 << std::endl << std::endl;
     }
-
-    TinyObjUtils::normalize(shapes);
 
     // Init GL context
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -165,15 +164,16 @@ int ModelRenderer::afterInit() {
         return 1;
     }
 
-    glClearColor(0.5, 0.5, 0.5, 1.0);
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
     glUseProgram(shaderProgram);
     worldMatrix = glm::mat4(1.0);
-    cameraMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -100));
+    cameraMatrix = glm::lookAt(glm::vec3(0, 50, 100), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 1000.0f);
+    // Since worldMatrix is orthogonal, inverse of transposed matrix = original matrix
     normalMatrix = glm::mat3(worldMatrix);//glm::inverseTranspose(glm::mat3(worldMatrix));
     lightPos = glm::vec3(100, 0, 100);
     auto wmLoc = glGetUniformLocation(shaderProgram, "worldMatrix");
@@ -186,7 +186,6 @@ int ModelRenderer::afterInit() {
     glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
     glUniform3fv(lpLoc, 1, glm::value_ptr(lightPos));
-    //glUniform3f(lpLoc, lightPos.x, lightPos.y, lightPos.z);
     glUseProgram(0);
 
     return 0;
@@ -225,6 +224,7 @@ void ModelRenderer::onRender() {
 
 void ModelRenderer::onTick(float update) {
     worldMatrix = glm::rotate(worldMatrix, glm::radians(update / 8.0f), glm::vec3(0, 1, 0));
+    // Since worldMatrix is orthogonal, inverse of transposed matrix = original matrix
     normalMatrix = glm::mat3(worldMatrix);//glm::inverseTranspose(glm::mat3(worldMatrix));
 }
 
