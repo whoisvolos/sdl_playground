@@ -46,6 +46,7 @@ public:
     virtual void onTick(float update) override;
     virtual void onRender() override;
     virtual int afterInit() override;
+    virtual void onResize(int newWidth, int newHeight) override;
 
     ModelRenderer(const char* name, const char* modelFile);
     ~ModelRenderer();

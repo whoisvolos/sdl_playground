@@ -69,22 +69,6 @@ void SpacexContainer::onEvent(SDL_Event &event) {
             }
             break;
         }
-        case (SDL_WINDOWEVENT): {
-            switch (event.window.event) {
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                case SDL_WINDOWEVENT_RESIZED: {
-                    width = event.window.data1;
-                    height = event.window.data2;
-                    SDL_DestroyTexture(screenTex);
-                    SDL_FreeSurface(screen);
-                    screen = SDL_CreateRGBSurface(0, width, height, bpp, rMask, gMask, bMask, aMask);
-                    screenTex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-                }
-                default:
-                    break;
-            }
-            break;
-        }
         default:
             break;
     }
@@ -116,6 +100,14 @@ void SpacexContainer::onRender() {
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, screenTex, NULL, NULL);
     SDL_RenderPresent(renderer);
+}
+
+void SpacexContainer::onResize(int newWidth, int newHeight) {
+    AppContainer::onResize(newWidth, newHeight);
+    SDL_DestroyTexture(screenTex);
+    SDL_FreeSurface(screen);
+    screen = SDL_CreateRGBSurface(0, width, height, bpp, rMask, gMask, bMask, aMask);
+    screenTex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 }
 
 unsigned int SpacexContainer::onFPSTimer(unsigned int interval, void *param) {

@@ -34,4 +34,5 @@ public:
     virtual void onTick(float update);
     virtual void onEvent(SDL_Event& event);
     virtual void onRender();
+    virtual void onResize(int newWidth, int newHeight);
 };

@@ -31,6 +31,7 @@ public:
     virtual void onTick(float update) override;
     virtual void onRender() override;
     virtual int afterInit() override;
+    virtual void onResize(int newWidth, int newHeight) override;
 
     SpacexContainer(const char *name);
     ~SpacexContainer();

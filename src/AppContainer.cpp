@@ -13,6 +13,9 @@ int AppContainer::init(int width, int height, bool onlyOpenGL) {
         return 1;
     }
 
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+
     window = SDL_CreateWindow(
         windowName,
         SDL_WINDOWPOS_CENTERED,
@@ -71,6 +74,11 @@ void AppContainer::onRender() {
     }
 }
 
+void AppContainer::onResize(int newWidth, int newHeight) {
+    width = newWidth;
+    height = newHeight;
+}
+
 void AppContainer::stop() {
     running = false;
 }
@@ -81,8 +89,19 @@ int AppContainer::run() {
     ticks = SDL_GetPerformanceCounter();
     while(running) {
         while(SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
+            switch (event.type) {
+                case (SDL_QUIT): {
+                    stop();
+                    break;
+                }
+                case (SDL_WINDOWEVENT): {
+                    if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
+                        onResize(event.window.data1, event.window.data2);
+                    }
+                    break;
+                }
+                default:
+                    break;
             }
             onEvent(event);
         }

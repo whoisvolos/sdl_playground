@@ -6,8 +6,7 @@ using namespace utils;
 
 ModelRenderer::ModelRenderer(const char* name, const char*modelFile)
         : AppContainer(name),
-          modeFile(modelFile)/*,
-          program(nullptr)*/ {}
+          modeFile(modelFile) {}
 
 ModelRenderer::~ModelRenderer() {
     if (glContext) {
@@ -114,8 +113,8 @@ int ModelRenderer::afterInit() {
     glEnableVertexAttribArray(0);
 
     size_t len;
-    vertexSource = OpenGLShaderProgram::readFile("/Users/whoisvolos/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
-    fragmentSource = OpenGLShaderProgram::readFile("/Users/whoisvolos/repos/cpp_projects/sdl_playground/shaders/simple.frag", len);
+    vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
+    fragmentSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/simple.frag", len);
     if (!vertexSource) {
         std::cerr << "Can not load vshader" << std::endl;
         return 1;
@@ -161,8 +160,8 @@ int ModelRenderer::afterInit() {
 
     glUseProgram(shaderProgram);
     worldMatrix = glm::mat4(1.0);
-    cameraMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -2));
-    projectionMatrix = glm::perspective(glm::radians(75.0f), 1.0f * width / height, 0.01f, 100.0f);
+    cameraMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -100));
+    projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 1000.0f);
     auto wmLoc = glGetUniformLocation(shaderProgram, "worldMatrix");
     auto cmLoc = glGetUniformLocation(shaderProgram, "cameraMatrix");
     auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
@@ -195,6 +194,10 @@ void ModelRenderer::onRender() {
     glDepthFunc(GL_LEQUAL);
 
     glUseProgram(shaderProgram);
+    auto wmLoc = glGetUniformLocation(shaderProgram, "worldMatrix");
+    auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
+    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(worldMatrix));
+    glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glDrawElements(GL_TRIANGLES, shapes[0].mesh.indices.size(), GL_UNSIGNED_INT, 0);
     glUseProgram(0);
 
@@ -202,7 +205,14 @@ void ModelRenderer::onRender() {
 }
 
 void ModelRenderer::onTick(float update) {
+    worldMatrix = glm::rotate(worldMatrix, glm::radians(update / 8.0f), glm::vec3(0, 1, 0));
+}
 
+void ModelRenderer::onResize(int newWidth, int newHeight) {
+    AppContainer::onResize(newWidth, newHeight);
+    printf("Resized to %i x %i\n", width, height);
+    projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 1000.0f);
+    glViewport(0, 0, width, height);
 }
 
 void ModelRenderer::onEvent(SDL_Event &event) {
