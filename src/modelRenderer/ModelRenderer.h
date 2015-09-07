@@ -11,6 +11,7 @@
 #include <OpenGL/glu.h>
 #include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
 
 using namespace tinyobj;
 
@@ -32,6 +33,8 @@ private:
     glm::mat4 worldMatrix;
     glm::mat4 cameraMatrix;
     glm::mat4 projectionMatrix;
+    glm::mat3 normalMatrix;
+    glm::vec3 lightPos;
 
     GLchar* vertexSource;
     GLchar* fragmentSource;
