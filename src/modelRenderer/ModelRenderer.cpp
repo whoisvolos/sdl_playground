@@ -1,3 +1,4 @@
+#include <tiny_obj_loader.h>
 #include "ModelRenderer.h"
 
 using namespace utils;
@@ -13,8 +14,8 @@ ModelRenderer::~ModelRenderer() {
 }
 
 int ModelRenderer::afterInit() {
-    FuncModel fmodel([](float x, float y) -> float { return expf(-x*x - y*y); });
-    fmodel.generateMesh(-1, 1, -1, 1, 1, 1);
+    //FuncModel fmodel([](float x, float y) -> float { return expf(-x*x - y*y); });
+    //fmodel.generateMesh(-1, 1, -1, 1, 1, 1);
 
     std::string err = LoadObj(shapes, materials, modeFile);
     if (!err.empty()) {
@@ -85,13 +86,13 @@ int ModelRenderer::afterInit() {
     vertices->release();
 
     cameraMatrix = glm::translate(glm::mat4(1.0), glm::vec3(0, 0, -2));
-    worldMatrix = glm::mat4(1.0);
+    mvMatrix = glm::mat4(1.0);
     projectionMatrix = glm::perspective(45.0f, (float)width/height, 0.01f, 100.0f);
 
     program->bind();
 
     program->setUniform("projMatrix", projectionMatrix);
-    program->setUniform("worldMatrix", worldMatrix);
+    program->setUniform("mvMatrix", mvMatrix);
     program->setUniform("cameraMatrix", cameraMatrix);
 
     program->release();
@@ -105,15 +106,25 @@ int ModelRenderer::afterInit() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 
+    /*
+    float vertices[] = { -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0, -1, 1, 0 };
+    float normals[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
+    unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
+    */
+
     mesh_t& mesh = shapes[0].mesh;
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glBufferData(GL_ARRAY_BUFFER, mesh.positions.size() * sizeof(GLfloat) * 2, mesh.positions.data(), GL_STATIC_DRAW);
+    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * 2, vertices, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, mesh.positions.size() * sizeof(GLfloat), mesh.normals.size() * sizeof(GLfloat), mesh.normals.data());
+    //glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(normals), normals);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(sizeof(vertices)));
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(mesh.positions.size() * sizeof(GLfloat)));
 
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(GL_UNSIGNED_INT), mesh.indices.data(), GL_STATIC_DRAW);
+    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * mesh.indices.size(), mesh.indices.data(), GL_STATIC_DRAW);
 
     size_t len;
     vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
@@ -165,27 +176,36 @@ int ModelRenderer::afterInit() {
     }
 
     glClearColor(0.0, 0.0, 0.0, 1.0);
-    glEnable(GL_CULL_FACE);
+    //glEnable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
     glUseProgram(shaderProgram);
-    worldMatrix = glm::mat4(1.0);
-    cameraMatrix = glm::lookAt(glm::vec3(0, 50, 100), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+    // Vertex shader uniforms
+    mvMatrix = glm::mat4(1.0);
+    cameraMatrix = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 1000.0f);
-    // Since worldMatrix is orthogonal, inverse of transposed matrix = original matrix
-    normalMatrix = glm::mat3(worldMatrix);//glm::inverseTranspose(glm::mat3(worldMatrix));
-    lightPos = glm::vec3(100, 0, 100);
-    auto wmLoc = glGetUniformLocation(shaderProgram, "worldMatrix");
+    normalMatrix = glm::inverseTranspose(glm::mat3(mvMatrix));
+    auto wmLoc = glGetUniformLocation(shaderProgram, "mvMatrix");
     auto cmLoc = glGetUniformLocation(shaderProgram, "cameraMatrix");
     auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
     auto nmLoc = glGetUniformLocation(shaderProgram, "normalMatrix");
-    auto lpLoc = glGetUniformLocation(shaderProgram, "lightPos");
-    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(worldMatrix));
+    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(mvMatrix));
     glUniformMatrix4fv(cmLoc, 1, GL_FALSE, glm::value_ptr(cameraMatrix));
     glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
+
+    // Fragment shader uniforms
+    lightPos = glm::vec3(100, 0, 0);
+    frontColor = glm::vec3(1, 0, 0);
+    backColor = glm::vec3(0, 0, 1);
+    auto lpLoc = glGetUniformLocation(shaderProgram, "lightPos");
+    auto fcLoc = glGetUniformLocation(shaderProgram, "frontColor");
+    auto bcLoc = glGetUniformLocation(shaderProgram, "backColor");
     glUniform3fv(lpLoc, 1, glm::value_ptr(lightPos));
+    glUniform3fv(fcLoc, 1, glm::value_ptr(frontColor));
+    glUniform3fv(bcLoc, 1, glm::value_ptr(backColor));
     glUseProgram(0);
 
     return 0;
@@ -210,22 +230,22 @@ void ModelRenderer::onRender() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(shaderProgram);
-    auto wmLoc = glGetUniformLocation(shaderProgram, "worldMatrix");
+    auto wmLoc = glGetUniformLocation(shaderProgram, "mvMatrix");
     auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
     auto nmLoc = glGetUniformLocation(shaderProgram, "normalMatrix");
-    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(worldMatrix));
+    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(mvMatrix));
     glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
     glDrawElements(GL_TRIANGLES, shapes[0].mesh.indices.size(), GL_UNSIGNED_INT, 0);
+    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glUseProgram(0);
 
     SDL_GL_SwapWindow(window);
 }
 
 void ModelRenderer::onTick(float update) {
-    worldMatrix = glm::rotate(worldMatrix, glm::radians(update / 8.0f), glm::vec3(0, 1, 0));
-    // Since worldMatrix is orthogonal, inverse of transposed matrix = original matrix
-    normalMatrix = glm::mat3(worldMatrix);//glm::inverseTranspose(glm::mat3(worldMatrix));
+    mvMatrix = glm::rotate(mvMatrix, glm::radians(update / 16.0f), glm::vec3(0, 1, 0));
+    normalMatrix = glm::inverseTranspose(glm::mat3(mvMatrix));
 }
 
 void ModelRenderer::onResize(int newWidth, int newHeight) {

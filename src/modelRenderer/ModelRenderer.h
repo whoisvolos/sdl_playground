@@ -32,11 +32,13 @@ private:
     OpenGLBuffer* indices;
     */
 
-    glm::mat4 worldMatrix;
+    glm::mat4 mvMatrix;
     glm::mat4 cameraMatrix;
     glm::mat4 projectionMatrix;
     glm::mat3 normalMatrix;
     glm::vec3 lightPos;
+    glm::vec3 frontColor;
+    glm::vec3 backColor;
 
     GLchar* vertexSource;
     GLchar* fragmentSource;
