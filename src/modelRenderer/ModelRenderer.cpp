@@ -1,5 +1,6 @@
 #include <tiny_obj_loader.h>
 #include "ModelRenderer.h"
+#include "CubeGenerator.h"
 
 using namespace utils;
 
@@ -14,22 +15,6 @@ ModelRenderer::~ModelRenderer() {
 }
 
 int ModelRenderer::afterInit() {
-    //FuncModel fmodel([](float x, float y) -> float { return expf(-x*x - y*y); });
-    //fmodel.generateMesh(-1, 1, -1, 1, 1, 1);
-
-    std::string err = LoadObj(shapes, materials, modeFile);
-    if (!err.empty()) {
-        std::cerr << err << std::endl;
-        return 1;
-    }
-
-    std::cout << "Model shapes: " << shapes.size() << std::endl << std::endl;
-    for (auto shape : shapes) {
-        std::cout << "Shape: " << shape.name << std::endl;
-        std::cout << "Faces: " << shape.mesh.indices.size() / 3 << std::endl;
-        std::cout << "Vertices: " << shape.mesh.positions.size() / 3 << std::endl << std::endl;
-    }
-
     // Init GL context
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -112,19 +97,22 @@ int ModelRenderer::afterInit() {
     unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
     */
 
-    mesh_t& mesh = shapes[0].mesh;
+    Model* model = cg.next();
+    if (!model) {
+        exit(1);
+    }
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glBufferData(GL_ARRAY_BUFFER, mesh.positions.size() * sizeof(GLfloat) * 2, mesh.positions.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, model->vtsize * 2, model->vertices, GL_STATIC_DRAW);
     //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * 2, vertices, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, mesh.positions.size() * sizeof(GLfloat), mesh.normals.size() * sizeof(GLfloat), mesh.normals.data());
+    glBufferSubData(GL_ARRAY_BUFFER, model->vtsize, model->ntsize, model->normals);
     //glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(normals), normals);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(sizeof(vertices)));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(mesh.positions.size() * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(model->vtsize));
 
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLfloat) * mesh.indices.size(), mesh.indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->itsize, model->indices, GL_STATIC_DRAW);
 
     size_t len;
     vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
@@ -236,7 +224,7 @@ void ModelRenderer::onRender() {
     glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(mvMatrix));
     glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-    glDrawElements(GL_TRIANGLES, shapes[0].mesh.indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
     //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glUseProgram(0);
 

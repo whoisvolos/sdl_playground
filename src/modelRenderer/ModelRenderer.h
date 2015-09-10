@@ -2,35 +2,19 @@
 
 #include "../AppContainer.h"
 #include "../logger.h"
-#include "OpenGLShaderProgram.h"
-#include "OpenGLVAO.h"
-#include "OpenGLBuffer.h"
-#include "TinyObjUtils.h"
-#include "FuncModel.h"
 #include <SDL.h>
 #include <GL/glew.h>
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
-#include <tiny_obj_loader.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
-
-using namespace tinyobj;
+#include "OpenGLShaderProgram.h"
+#include "CubeGenerator.h"
 
 class ModelRenderer : public AppContainer {
 private:
     const char*modeFile = nullptr;
     SDL_GLContext glContext = nullptr;
-
-    std::vector<shape_t> shapes;
-    std::vector<material_t> materials;
-
-    /*
-    OpenGLShaderProgram* program;
-    OpenGLVAO* vao;
-    OpenGLBuffer* vertices;
-    OpenGLBuffer* indices;
-    */
 
     glm::mat4 mvMatrix;
     glm::mat4 cameraMatrix;
@@ -47,6 +31,8 @@ private:
     GLuint shaderProgram;
     GLuint vao;
     GLuint vbo[2];
+
+    CubeGenerator cg;
 
 public:
     virtual void onEvent(SDL_Event& event) override;
