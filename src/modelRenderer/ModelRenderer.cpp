@@ -1,5 +1,6 @@
 #include <tiny_obj_loader.h>
 #include "ModelRenderer.h"
+#include <glm/gtc/matrix_access.hpp>
 #include "CubeGenerator.h"
 
 using namespace utils;
@@ -91,28 +92,22 @@ int ModelRenderer::afterInit() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 
-    /*
-    float vertices[] = { -1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0, -1, 1, 0 };
-    float normals[] = { 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1 };
-    unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
-    */
-
     Model* model = cg.next();
     if (!model) {
         exit(1);
     }
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glBufferData(GL_ARRAY_BUFFER, model->vtsize * 2, model->vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, model->vSize() * 2, model->vertices, GL_STATIC_DRAW);
     //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * 2, vertices, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, model->vtsize, model->ntsize, model->normals);
+    glBufferSubData(GL_ARRAY_BUFFER, model->vSize(), model->nSize(), model->normals);
     //glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(normals), normals);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
     //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(sizeof(vertices)));
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(model->vtsize));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(model->vSize()));
 
     //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->itsize, model->indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->iSize(), model->indices, GL_STATIC_DRAW);
 
     size_t len;
     vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
@@ -172,8 +167,8 @@ int ModelRenderer::afterInit() {
 
     // Vertex shader uniforms
     mvMatrix = glm::mat4(1.0);
-    cameraMatrix = glm::lookAt(glm::vec3(0, 0, 100), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-    projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 1000.0f);
+    cameraMatrix = glm::lookAt(glm::vec3(0, 5, 10), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+    projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 100.0f);
     normalMatrix = glm::inverseTranspose(glm::mat3(mvMatrix));
     auto wmLoc = glGetUniformLocation(shaderProgram, "mvMatrix");
     auto cmLoc = glGetUniformLocation(shaderProgram, "cameraMatrix");
@@ -185,33 +180,21 @@ int ModelRenderer::afterInit() {
     glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
 
     // Fragment shader uniforms
-    lightPos = glm::vec3(100, 0, 0);
+    lightPos = glm::vec3(0, 5, 10);
+    cameraPos = -glm::vec3(cameraMatrix[3]) * glm::mat3(cameraMatrix);
     frontColor = glm::vec3(1, 0, 0);
     backColor = glm::vec3(0, 0, 1);
     auto lpLoc = glGetUniformLocation(shaderProgram, "lightPos");
     auto fcLoc = glGetUniformLocation(shaderProgram, "frontColor");
     auto bcLoc = glGetUniformLocation(shaderProgram, "backColor");
+    auto cvLoc = glGetUniformLocation(shaderProgram, "cameraPos");
     glUniform3fv(lpLoc, 1, glm::value_ptr(lightPos));
     glUniform3fv(fcLoc, 1, glm::value_ptr(frontColor));
     glUniform3fv(bcLoc, 1, glm::value_ptr(backColor));
+    glUniform3fv(cvLoc, 1, glm::value_ptr(cameraPos));
     glUseProgram(0);
 
     return 0;
-}
-
-void ModelRenderer::logProgramParams() const {
-    /*
-    auto unifs = program->getAllUniforms();
-    std::cout << "Uniforms:" << std::endl;
-    for (auto u : unifs) {
-        printf("%s, type: %s, totalSize: %i\n", u.name.c_str(), program->getTypeName(u.type), u.size);
-    }
-    std::cout << "Attributes:" << std::endl;
-    auto attribs = program->getAllAttributes();
-    for (auto a : attribs) {
-        printf("%s, type: %s, totalSize: %i, index: %i\n", a.name.c_str(), program->getTypeName(a.type), a.size, a.index);
-    }
-    */
 }
 
 void ModelRenderer::onRender() {
@@ -225,7 +208,6 @@ void ModelRenderer::onRender() {
     glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
     glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
     glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glUseProgram(0);
 
     SDL_GL_SwapWindow(window);
@@ -239,7 +221,7 @@ void ModelRenderer::onTick(float update) {
 void ModelRenderer::onResize(int newWidth, int newHeight) {
     AppContainer::onResize(newWidth, newHeight);
     printf("Resized to %i x %i\n", width, height);
-    projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 1000.0f);
+    projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 100.0f);
     glViewport(0, 0, width, height);
 }
 

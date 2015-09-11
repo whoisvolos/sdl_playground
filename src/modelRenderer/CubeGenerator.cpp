@@ -1,8 +1,32 @@
 #include <stdio.h>
 #include <string.h>
 #include "CubeGenerator.h"
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace glm;
+
+int Model::vSize() {
+    return vCount * sizeof(vertex_t);
+}
+
+int Model::nSize() {
+    return nCount * sizeof(vertex_t);
+}
+
+int Model::iSize() {
+    return triCount * sizeof(tri_t);
+}
+
+int Model::iCount() {
+    return triCount * 3;
+}
+
+Model::Model(int vCount, int nCount, int triCount) : vCount(vCount), nCount(nCount), triCount(triCount) {
+    vertices = new GLfloat[vCount * 3];
+    normals = new GLfloat[nCount * 3];
+    indices = new int[triCount * 3];
+}
 
 Model::~Model() {
     delete[] vertices;
@@ -15,34 +39,21 @@ CubeGenerator::CubeGenerator() {
 }
 
 Model* CubeGenerator::next() {
-    Model* model = new Model;
-    model->normals = new GLfloat[model->ncount];
-    model->vertices = new GLfloat[model->vcount];
-    model->indices = new int[model->icount];
+    Model* model = new Model(36, 36, 12);
 
-    memcpy(model->vertices, vertices, model->vtsize);
-    memcpy(model->indices, indices, model->itsize);
+    mat4 id = mat4(1.0f);
+    vec3 tr = vec3(5, 0, 0);
 
-    for (int i = 0; i < model->icount; i += 3) {
-        printf("%i\n", i);
-        vec3 a(vertices[indices[i * 3]], vertices[indices[i * 3 + 1]], vertices[indices[i * 3 + 2]]);
-        vec3 b(vertices[indices[(i + 1) * 3]], vertices[indices[(i + 1) * 3 + 1]], vertices[indices[(i + 1) * 3 + 2]]);
-        vec3 c(vertices[indices[(i + 2) * 3]], vertices[indices[(i + 2) * 3 + 1]], vertices[indices[(i + 2) * 3 + 2]]);
-
-        vec3 an = normalize(cross(a - b, a - c));
-        vec3 bn = normalize(cross(b - a, b - c));
-        vec3 cn = normalize(cross(c - b, c - a));
-
-        model->normals[indices[i * 3]] = an.x;
-        model->normals[indices[i * 3 + 1]] = an.y;
-        model->normals[indices[i * 3 + 2]] = an.z;
-        model->normals[indices[(i + 1) * 3]] = bn.x;
-        model->normals[indices[(i + 1) * 3 + 1]] = bn.y;
-        model->normals[indices[(i + 1) * 3 + 2]] = bn.z;
-        model->normals[indices[(i + 2) * 3]] = cn.x;
-        model->normals[indices[(i + 2) * 3 + 1]] = cn.y;
-        model->normals[indices[(i + 3) * 3 + 2]] = cn.z;
+    for (int i = 0; i < model->vCount; ++i) {
+        vertex_t vertex = vertices[i];
+        vec3 curVec(vertex.x, vertex.y, vertex.z);
+        //curVec = vec3(translate(id, tr) * vec4(curVec, 1.0));
+        memcpy(&model->vertices[i * 3], value_ptr(curVec), sizeof(vertex_t));
     }
+
+    //memcpy(model->vertices, vertices, sizeof(vertices));
+    memcpy(model->normals, normals, sizeof(normals));
+    memcpy(model->indices, indices, sizeof(indices));
 
     return model;
 }

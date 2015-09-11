@@ -21,6 +21,7 @@ private:
     glm::mat4 projectionMatrix;
     glm::mat3 normalMatrix;
     glm::vec3 lightPos;
+    glm::vec3 cameraPos;
     glm::vec3 frontColor;
     glm::vec3 backColor;
 
