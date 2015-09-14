@@ -13,7 +13,7 @@
 
 class ModelRenderer : public AppContainer {
 private:
-    const char*modeFile = nullptr;
+    const char* modeFile = nullptr;
     SDL_GLContext glContext = nullptr;
 
     glm::mat4 mvMatrix;
@@ -25,14 +25,11 @@ private:
     glm::vec3 frontColor;
     glm::vec3 backColor;
 
-    GLchar* vertexSource;
-    GLchar* fragmentSource;
-    GLuint vertexShader;
-    GLuint fragmentShader;
-    GLuint shaderProgram;
     GLuint vao;
     GLuint vbo[2];
 
+    OpenGLShaderProgram sprogram;
+    Model* model;
     CubeGenerator cg;
 
 public:

@@ -1,7 +1,16 @@
 #pragma once
 
+#include <stdio.h>
+#include <string.h>
+#include <random>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_operation.hpp>
+
+using namespace std;
+using namespace glm;
 
 struct vertex_t {
     GLfloat x;
@@ -23,141 +32,30 @@ struct tri_t {
 
 class Model {
 public:
-    GLfloat* vertices;
-    int* indices;
-    GLfloat* normals;
+    vector<vec3> vertices;
+    vector<vec3> normals;
+    vector<int> indices;
 
-    int vCount;
-    int nCount;
-    int triCount;
+    int vSize() const;
+    int nSize() const;
+    int iSize() const;
+    int iCount() const;
 
-    int vSize();
-    int nSize();
-    int iSize();
-    int iCount();
+    GLfloat* getVertices() const;
+    GLfloat* getNormals() const;
+    int* getIndices() const;
 
-    Model(int vCount, int nCount, int triCount);
+    Model(const vector<vec3>& vertices, const vector<vec3>& normals, const vector<int>& indices);
     ~Model();
 };
 
 class CubeGenerator {
 private:
-    vertex_t vertices[36] = {
-        vertex_t(-1, -1, 1),
-        vertex_t(1, -1, 1),
-        vertex_t(1, 1, 1),
-
-        vertex_t(1, 1, 1),
-        vertex_t(-1, 1, 1),
-        vertex_t(-1, -1, 1),
-
-        vertex_t(1, -1, 1),
-        vertex_t(1, -1, -1),
-        vertex_t(1, 1, -1),
-
-        vertex_t(1, 1, -1),
-        vertex_t(1, 1, 1),
-        vertex_t(1, -1, 1),
-
-        vertex_t(1, -1, -1),
-        vertex_t(-1, -1, -1),
-        vertex_t(-1, 1, -1),
-
-        vertex_t(-1, 1, -1),
-        vertex_t(1, 1, -1),
-        vertex_t(1, -1, -1),
-
-        vertex_t(-1, -1, -1),
-        vertex_t(-1, -1, 1),
-        vertex_t(-1, 1, 1),
-
-        vertex_t(-1, 1, 1),
-        vertex_t(-1, 1, -1),
-        vertex_t(-1, -1, -1),
-
-        vertex_t(1, -1, 1),
-        vertex_t(-1, -1, 1),
-        vertex_t(-1, -1, -1),
-
-        vertex_t(-1, -1, -1),
-        vertex_t(1, -1, -1),
-        vertex_t(1, -1, 1),
-
-        vertex_t(1, 1, -1),
-        vertex_t(-1, 1, -1),
-        vertex_t(-1, 1, 1),
-
-        vertex_t(-1, 1, 1),
-        vertex_t(1, 1, 1),
-        vertex_t(1, 1, -1),
-    };
-
-    vertex_t normals[36] = {
-        vertex_t(0, 0, 1),
-        vertex_t(0, 0, 1),
-        vertex_t(0, 0, 1),
-
-        vertex_t(0, 0, 1),
-        vertex_t(0, 0, 1),
-        vertex_t(0, 0, 1),
-
-        vertex_t(1, 0, 0),
-        vertex_t(1, 0, 0),
-        vertex_t(1, 0, 0),
-
-        vertex_t(1, 0, 0),
-        vertex_t(1, 0, 0),
-        vertex_t(1, 0, 0),
-
-        vertex_t(0, 0, -1),
-        vertex_t(0, 0, -1),
-        vertex_t(0, 0, -1),
-
-        vertex_t(0, 0, -1),
-        vertex_t(0, 0, -1),
-        vertex_t(0, 0, -1),
-
-        vertex_t(-1, 0, 0),
-        vertex_t(-1, 0, 0),
-        vertex_t(-1, 0, 0),
-
-        vertex_t(-1, 0, 0),
-        vertex_t(-1, 0, 0),
-        vertex_t(-1, 0, 0),
-
-        vertex_t(0, -1, 0),
-        vertex_t(0, -1, 0),
-        vertex_t(0, -1, 0),
-
-        vertex_t(0, -1, 0),
-        vertex_t(0, -1, 0),
-        vertex_t(0, -1, 0),
-
-        vertex_t(0, 1, 0),
-        vertex_t(0, 1, 0),
-        vertex_t(0, 1, 0),
-
-        vertex_t(0, 1, 0),
-        vertex_t(0, 1, 0),
-        vertex_t(0, 1, 0)
-    };
-
-    tri_t indices[12] = {
-        tri_t(0, 1, 2),
-        tri_t(3, 4, 5),
-        tri_t(6, 7, 8),
-        tri_t(9, 10, 11),
-        tri_t(12, 13, 14),
-        tri_t(15, 16, 17),
-        tri_t(18, 19, 20),
-        tri_t(21, 22, 23),
-        tri_t(24, 25, 26),
-        tri_t(27, 28, 29),
-        tri_t(30, 31, 32),
-        tri_t(33, 34, 35)
-    };
+    vector<vec3> gvertices;
+    vector<vec3> gnormals;
 
 public:
     CubeGenerator();
-    Model* next();
+    Model* next(const vec3& scaleVec = vec3(1.0), const mat4& transform = mat4(1.0));
+    Model* next(Model* toMergeWith, const vec3& scaleVec = vec3(1.0), const mat4& transform = mat4(1.0));
 };

@@ -82,6 +82,7 @@ public:
     inline void setUniform4Array(GLint loc, GLsizei size, const float *array);
 
     int link();
+    void init();
     void bind();
     void release();
 

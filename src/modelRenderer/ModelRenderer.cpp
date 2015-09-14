@@ -10,6 +10,9 @@ ModelRenderer::ModelRenderer(const char* name, const char*modelFile)
           modeFile(modelFile) {}
 
 ModelRenderer::~ModelRenderer() {
+    if (model) {
+        delete model;
+    }
     if (glContext) {
         SDL_GL_DeleteContext(glContext);
     }
@@ -92,69 +95,42 @@ int ModelRenderer::afterInit() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[1]);
 
-    Model* model = cg.next();
-    if (!model) {
-        exit(1);
-    }
+    model = cg.next();
+
+    cg.next(model, vec3(0.5), glm::translate(mat4(1.0f), vec3(1, 0, 0)));
+    cg.next(model, vec3(0.5), glm::translate(mat4(1.0f), vec3(-1, 0, 0)));
+    cg.next(model, vec3(0.5), glm::translate(mat4(1.0f), vec3(0, 0, 1)));
+    cg.next(model, vec3(0.5), glm::translate(mat4(1.0f), vec3(0, 0, -1)));
+    cg.next(model, vec3(0.5), glm::translate(mat4(1.0f), vec3(0, 1, 0)));
+    cg.next(model, vec3(0.5), glm::translate(mat4(1.0f), vec3(0, -1, 0)));
+
+    cg.next(model, vec3(0.25), glm::translate(mat4(1.0f), vec3(3, 0, 0)));
+    cg.next(model, vec3(0.25), glm::translate(mat4(1.0f), vec3(-3, 0, 0)));
+    cg.next(model, vec3(0.25), glm::translate(mat4(1.0f), vec3(0, 0, 3)));
+    cg.next(model, vec3(0.25), glm::translate(mat4(1.0f), vec3(0, 0, -3)));
+    cg.next(model, vec3(0.25), glm::translate(mat4(1.0f), vec3(0, 3, 0)));
+    cg.next(model, vec3(0.25), glm::translate(mat4(1.0f), vec3(0, -3, 0)));
+
+    cg.next(model, vec3(1, 0.125, 0.125), glm::translate(mat4(1.0f), vec3(2, 0, 0)));
+    cg.next(model, vec3(1, 0.125, 0.125), glm::translate(mat4(1.0f), vec3(-2, 0, 0)));
+    cg.next(model, vec3(0.125, 0.125, 1), glm::translate(mat4(1.0f), vec3(0, 0, 2)));
+    cg.next(model, vec3(0.125, 0.125, 1), glm::translate(mat4(1.0f), vec3(0, 0, -2)));
+    cg.next(model, vec3(0.125, 1, 0.125), glm::translate(mat4(1.0f), vec3(0, 2, 0)));
+    cg.next(model, vec3(0.125, 1, 0.125), glm::translate(mat4(1.0f), vec3(0, -2, 0)));
+
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glBufferData(GL_ARRAY_BUFFER, model->vSize() * 2, model->vertices, GL_STATIC_DRAW);
-    //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices) * 2, vertices, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, model->vSize(), model->nSize(), model->normals);
-    //glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertices), sizeof(normals), normals);
+    glBufferData(GL_ARRAY_BUFFER, model->vSize() * 2, model->getVertices(), GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, model->vSize(), model->nSize(), model->getNormals());
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(sizeof(vertices)));
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<const void *>(model->vSize()));
 
-    //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->iSize(), model->indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->iSize(), model->getIndices(), GL_STATIC_DRAW);
 
-    size_t len;
-    vertexSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert", len);
-    fragmentSource = OpenGLShaderProgram::readFile("/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/simple.frag", len);
-    if (!vertexSource) {
-        std::cerr << "Can not load vshader" << std::endl;
-        return 1;
-    }
-    if (!fragmentSource) {
-        std::cerr << "Can not load fshader" << std::endl;
-        return 1;
-    }
-
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-    glShaderSource(vertexShader, 1, (const GLchar**)&vertexSource, 0);
-    glShaderSource(fragmentShader, 1, (const GLchar**)&fragmentSource, 0);
-
-    glCompileShader(vertexShader);
-    glCompileShader(fragmentShader);
-
-    GLint status;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
-    if (!status) {
-        std::cerr << "Can not compile vshader" << std::endl;
-        return 1;
-    }
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
-    if (!status) {
-        std::cerr << "Can not compile fshader" << std::endl;
-        return 1;
-    }
-
-    shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &status);
-    if (!status) {
-        std::cerr << "Can not link shaders" << std::endl;
-        GLint maxLen;
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLen);
-        char* linkInfoLog = new char[maxLen];
-        glGetProgramInfoLog(shaderProgram, maxLen, &maxLen, linkInfoLog);
-        std::cerr << linkInfoLog << std::endl;
-        delete[] linkInfoLog;
+    sprogram.init();
+    if (sprogram.addShaderFromSourceFile(OpenGLShaderProgram::VertexType, "/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/mvp.vert") != 0 ||
+        sprogram.addShaderFromSourceFile(OpenGLShaderProgram::FragmentType, "/Users/sgolubev/repos/cpp_projects/sdl_playground/shaders/simple.frag") != 0 ||
+        sprogram.link() != 0) {
         return 1;
     }
 
@@ -163,36 +139,26 @@ int ModelRenderer::afterInit() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
 
-    glUseProgram(shaderProgram);
-
+    sprogram.bind();
     // Vertex shader uniforms
     mvMatrix = glm::mat4(1.0);
     cameraMatrix = glm::lookAt(glm::vec3(0, 5, 10), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
     projectionMatrix = glm::perspective(glm::radians(45.0f), 1.0f * width / height, 0.01f, 100.0f);
     normalMatrix = glm::inverseTranspose(glm::mat3(mvMatrix));
-    auto wmLoc = glGetUniformLocation(shaderProgram, "mvMatrix");
-    auto cmLoc = glGetUniformLocation(shaderProgram, "cameraMatrix");
-    auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
-    auto nmLoc = glGetUniformLocation(shaderProgram, "normalMatrix");
-    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(mvMatrix));
-    glUniformMatrix4fv(cmLoc, 1, GL_FALSE, glm::value_ptr(cameraMatrix));
-    glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-    glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-
+    sprogram.setUniform("mvMatrix", mvMatrix);
+    sprogram.setUniform("cameraMatrix", cameraMatrix);
+    sprogram.setUniform("projMatrix", projectionMatrix);
+    sprogram.setUniform("normalMatrix", normalMatrix);
     // Fragment shader uniforms
     lightPos = glm::vec3(0, 5, 10);
     cameraPos = -glm::vec3(cameraMatrix[3]) * glm::mat3(cameraMatrix);
     frontColor = glm::vec3(1, 0, 0);
     backColor = glm::vec3(0, 0, 1);
-    auto lpLoc = glGetUniformLocation(shaderProgram, "lightPos");
-    auto fcLoc = glGetUniformLocation(shaderProgram, "frontColor");
-    auto bcLoc = glGetUniformLocation(shaderProgram, "backColor");
-    auto cvLoc = glGetUniformLocation(shaderProgram, "cameraPos");
-    glUniform3fv(lpLoc, 1, glm::value_ptr(lightPos));
-    glUniform3fv(fcLoc, 1, glm::value_ptr(frontColor));
-    glUniform3fv(bcLoc, 1, glm::value_ptr(backColor));
-    glUniform3fv(cvLoc, 1, glm::value_ptr(cameraPos));
-    glUseProgram(0);
+    sprogram.setUniform("lightPos", lightPos);
+    sprogram.setUniform("frontColor", frontColor);
+    sprogram.setUniform("backColor", backColor);
+    sprogram.setUniform("cameraPos", cameraPos);
+    sprogram.release();
 
     return 0;
 }
@@ -200,15 +166,12 @@ int ModelRenderer::afterInit() {
 void ModelRenderer::onRender() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(shaderProgram);
-    auto wmLoc = glGetUniformLocation(shaderProgram, "mvMatrix");
-    auto pmLoc = glGetUniformLocation(shaderProgram, "projMatrix");
-    auto nmLoc = glGetUniformLocation(shaderProgram, "normalMatrix");
-    glUniformMatrix4fv(wmLoc, 1, GL_FALSE, glm::value_ptr(mvMatrix));
-    glUniformMatrix4fv(pmLoc, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
-    glUniformMatrix3fv(nmLoc, 1, GL_FALSE, glm::value_ptr(normalMatrix));
-    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-    glUseProgram(0);
+    sprogram.bind();
+    sprogram.setUniform("mvMatrix", mvMatrix);
+    sprogram.setUniform("projMatrix", projectionMatrix);
+    sprogram.setUniform("normalMatrix", normalMatrix);
+    glDrawElements(GL_TRIANGLES, model->iCount(), GL_UNSIGNED_INT, 0);
+    sprogram.release();
 
     SDL_GL_SwapWindow(window);
 }

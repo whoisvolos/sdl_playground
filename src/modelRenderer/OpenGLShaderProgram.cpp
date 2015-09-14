@@ -1,7 +1,9 @@
 #include <iostream>
 #include "OpenGLShaderProgram.h"
 
-OpenGLShaderProgram::OpenGLShaderProgram(): vShaderHandle(0), fShaderHandle(0) {
+OpenGLShaderProgram::OpenGLShaderProgram(): vShaderHandle(0), fShaderHandle(0), shaderProgramHandle(0) {}
+
+void OpenGLShaderProgram::init() {
     shaderProgramHandle = glCreateProgram();
 }
 
